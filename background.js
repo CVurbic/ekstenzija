@@ -30,8 +30,8 @@ async function savePopisArtikalaItemsToSupabase(popisArtikala) {
                 'Authorization': `Bearer ${supabaseKey}`,
             },
             body: JSON.stringify(popisArtikala.map(item => ({
-                naziv_artikla: item.naziv_artikla,
-                id_artikla: item.id_artikla
+                naziv_artikla: item.itemName,
+                id_artikla: item.itemId
             })))
         });
 
