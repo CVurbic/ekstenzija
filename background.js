@@ -160,6 +160,11 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
     console.log(message);
 
+if(message.allTicketItems){
+	removeExistingArikles(message.allTicketItems)
+	return true
+}
+
     if (message.action === "fetchActiveTickets") {
         try {
             const responseData = await fetchActiveTickets();
