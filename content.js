@@ -287,7 +287,7 @@ window.addEventListener("load", () => {
   const storedTheme = localStorage.getItem('theme');
   const tbodyElements = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket");
 
-
+console.log("storedItems:",storedItems)
 
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
@@ -343,6 +343,7 @@ chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (re
     sortedItems.forEach(item => {
       allTicketItems[item.itemId] = item;
     });
+	console.log("sortedItems: ",sortedItems)
   } else {
     console.log('Podaci nisu pronađeni u lokalnoj pohrani.');
   }
