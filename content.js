@@ -343,6 +343,11 @@ chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (re
     sortedItems.forEach(item => {
       allTicketItems[item.itemId] = item;
     });
+	chrome.runtime.sendMessage({ allTicketItems: allTicketItems }, function (response) {
+      
+      console.log("Odgovor od background skripte (allTicketItems):", response);
+      // Ovdje možete obraditi odgovor ako je potrebno
+    });
 	console.log("sortedItems: ",sortedItems)
   } else {
     console.log('Podaci nisu pronađeni u lokalnoj pohrani.');
