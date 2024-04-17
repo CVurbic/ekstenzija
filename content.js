@@ -7,7 +7,7 @@ let mojaBoja = undefined;
 let uIzradi = []
 let odabraniRadnik = undefined
 const poslovnica = "CCOE"
-const mainTableRow = document.querySelector("#mainTableRow")
+const tabContent = document.querySelector(".tab-content")
 const notificirajArtikli = [1424, 1425,1426,1429,1430,1434,1435,1437,1441,1468,1475, 1488, 1491, 1492, 1520, 1521,1524,1581,1582,1583, 1584,1585, 1587, 1588, 1589,1590, 1591,1593,1594,1595, 1597, 1598, 1871, 1872, 1884, 1886, 1887, 1888, 1889, 1890,1891, 1924, 1925,1947, 1948]
 
 const allTicketItems = {};
@@ -197,7 +197,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 });
 
 
-mainTableRow.addEventListener('click', function (e) {
+tabContent.addEventListener('click', function (e) {
   // Provjeravamo je li kliknuti element unutar tbody s klasom ticket
   var ticketElement = e.target.closest('tbody.ticket');
   if (ticketElement) {
