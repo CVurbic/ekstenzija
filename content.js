@@ -292,7 +292,7 @@ console.log("storedItems:",storedItems)
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
   const ticketNumbersUnique = [...new Set(ticketNumbers)];
-
+console.log("TicketNumbers: ",ticketNumbersUnique)
 
 chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (response) {
     console.log("Poruka poslana na stražnji kraj.");
