@@ -297,8 +297,6 @@ window.addEventListener("load", () => {
   const storedTheme = localStorage.getItem('theme');
   const tbodyElements = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket");
 
-console.log("storedItems:",storedItems)
-
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
   const ticketNumbersUnique = [...new Set(ticketNumbers)];
@@ -451,6 +449,7 @@ function handlePageChanges(mutations) {
 
   // Ponovno izračunavanje količina za sve kartice
   const itemCounts = getCountOfItemsFromAllTickets(idKebaba);
+  console.log("ITEMCOUNTS",itemCounts)
 
   // Slanje ažuriranih količina na pozadinu
   chrome.runtime.sendMessage({ itemCounts: itemCounts }, function (response) {
