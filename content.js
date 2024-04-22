@@ -9,8 +9,18 @@ let odabraniRadnik = undefined
 const poslovnica = "CCOE"
 const tabContent = document.querySelector(".tab-content")
 const notificirajArtikli = [1424, 1425,1426,1429,1430,1434,1435,1437,1441,1468,1475, 1488, 1491, 1492, 1520, 1521,1524,1581,1582,1583, 1584,1585, 1587, 1588, 1589,1590, 1591,1593,1594,1595, 1597, 1598, 1871, 1872, 1884, 1886, 1887, 1888, 1889, 1890,1891, 1924, 1925,1947, 1948]
+const idKebaba= [1477,	1478, 1479,1480, 1481, 1482, 1483, 1484, 1485, 1486, 1487, 1493, 1494, 1495,1496, 1497, 1510, 1511, 1512, 1513,1525, 1526, 1527, 1528,1529, 1530, 1532, 1534, 1614, 1848, 1851, 1867, 1869 ]
 
 const allTicketItems = {};
+
+
+
+
+
+
+
+
+
 
 function hexToRgba(hex) {
   hex = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => {
@@ -54,14 +64,7 @@ function processTicket(tbody) {
   });
 
   const sortedItems = Object.values(allTicketItems).sort((a, b) => a.itemId - b.itemId);
-console.log("alltivketitems ",sortedItems )
   localStorage.setItem('sortedItems', JSON.stringify(sortedItems));
-
-	chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
-      
-      console.log("Odgovor od background skripte (allTicketItems):", response);
-      // Ovdje možete obraditi odgovor ako je potrebno
-    });
 }
 
 
@@ -346,10 +349,11 @@ chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (re
   }
 
   if (storedItems) {
-console.log("localItems ",storedItems)
     const sortedItems = JSON.parse(storedItems);
-    
-	chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
+    sortedItems.forEach(item => {
+      allTicketItems[item.itemId] = item;
+    });
+	chrome.runtime.sendMessage({ allTicketItems: allTicketItems }, function (response) {
       
       console.log("Odgovor od background skripte (allTicketItems):", response);
       // Ovdje možete obraditi odgovor ako je potrebno
@@ -425,6 +429,40 @@ console.log(currentlySelected)
     attributeFilter: ["class"],
   });
 });
+
+
+
+function handlePageChanges(mutations) {
+  const removedTickets = Array.from(mutations)
+    .map((mutation) => mutation.removedNodes)
+    .flat()
+    .filter((node) => node.tagName === "TBODY" && node.classList.contains("ticket-item"));
+  
+  // Ažuriranje količina za uklonjene kartice
+  removedTickets.forEach((ticket) => {
+    const ticketItems = ticket.querySelectorAll(".ticket-item");
+    ticketItems.forEach((item) => {
+      const itemId = parseInt(item.getAttribute("product-id"));
+      if (itemId in allTicketItems) {
+        allTicketItems[itemId]--;
+      }
+    });
+  });
+
+  // Ponovno izračunavanje količina za sve kartice
+  const itemCounts = getCountOfItemsFromAllTickets(idKebaba);
+
+  // Slanje ažuriranih količina na pozadinu
+  chrome.runtime.sendMessage({ itemCounts: itemCounts }, function (response) {
+    console.log("Ažurirane količine poslane na pozadinu:", response);
+    // Ovdje možete obraditi odgovor ako je potrebno
+  });
+}
+
+// Observer za praćenje promjena na stranici
+const observer = new MutationObserver(handlePageChanges);
+
+
 
 function applyStylingToNewElement(newElement, selectedColor) {
   const headerRow = newElement.querySelector(
