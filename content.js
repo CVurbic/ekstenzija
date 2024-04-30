@@ -7,7 +7,14 @@ let mojaBoja = undefined;
 let uIzradi = []
 let odabraniRadnik = undefined
 const poslovnica = "CCOE"
-const mainTableRow = document.querySelector("#mainTableRow")
+const tabContent = document.querySelector(".tab-content")
+const notificirajArtikli = [1424, 1425, 1426, 1429, 1430, 1434, 1435, 1437, 1441, 1468, 1475, 1488, 1491, 1492, 1520, 1521, 1524, 1581, 1582, 1583, 1584, 1585, 1587, 1588, 1589, 1590, 1591, 1593, 1594, 1595, 1597, 1598, 1871, 1872, 1884, 1886, 1887, 1888, 1889, 1890, 1891, 1924, 1925, 1947, 1948]
+const notificirajElementi = []
+
+let mainTable = document.querySelector("#mainTable");
+let glowElement = document.querySelector(".glow")
+
+const allTicketItems = {};
 
 function hexToRgba(hex) {
   hex = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => {
@@ -36,7 +43,6 @@ function chooseNextColor() {
   return nextColor;
 }
 
-const allTicketItems = {};
 
 function addItemToAllItems(itemName, itemId) {
   allTicketItems[itemId] = { itemName, itemId };
@@ -52,10 +58,15 @@ function processTicket(tbody) {
   });
 
   const sortedItems = Object.values(allTicketItems).sort((a, b) => a.itemId - b.itemId);
+  console.log("alltivketitems ", sortedItems)
   localStorage.setItem('sortedItems', JSON.stringify(sortedItems));
+
+  chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
+
+    console.log("Odgovor od background skripte (allTicketItems):", response);
+    // Ovdje možete obraditi odgovor ako je potrebno
+  });
 }
-
-
 
 
 function changeColor(tbodyElements) {
@@ -125,14 +136,7 @@ function setInitialTheme(tbodyElements, storedTheme) {
   changeColor(tbodyElements);
 }
 
-
-
-
-
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-
-
-  // NOVO DODANO:
 
   if (message.odabraniRadnik) {
     localStorage.setItem('odabraniRadnik', message.odabraniRadnik);
@@ -181,12 +185,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
   }
 
 
-
   if (message.themes) {
     processThemes(message.themes);
   }
 
   if (message.odabranaTema) {
+    console.log(message)
     theme = message.odabranaTema;
     const selectedTheme = sveBoje.find(item => item.tema.toLowerCase() === theme.toLowerCase());
     if (selectedTheme) {
@@ -198,10 +202,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       console.log("Odabrana tema nije pronađena.");
     }
   }
+  if (message.popisArtikala) {
+    allTicketItems = message.popisArtikala;
+  }
 });
 
 
-mainTableRow.addEventListener('click', function (e) {
+tabContent.addEventListener('click', function (e) {
   // Provjeravamo je li kliknuti element unutar tbody s klasom ticket
   var ticketElement = e.target.closest('tbody.ticket');
   if (ticketElement) {
@@ -223,18 +230,189 @@ mainTableRow.addEventListener('click', function (e) {
 })
 
 
+let isGlowing = false;
+function createGlowElement(navHeight) {
+
+  glowElement = document.createElement("div")
+  glowElement.classList.add("glow")
+  glowElement.style.setProperty("width", "50px")
+  glowElement.style.setProperty("height", `calc(100% - ${navHeight}px)`);
+  glowElement.style.setProperty("position", "fixed")
+  glowElement.style.setProperty("right", "0")
+  glowElement.style.setProperty("top", "45px")
+  glowElement.style.setProperty("border-radius", "5rem 0 0 5rem")
+  glowElement.style.setProperty("transform", "translateX(20px)")
+
+  glowElement.style.setProperty("transition", "opacity 0.25s ease-in-out")
+  glowElement.style.setProperty("background", " linear-gradient(90deg, rgba(2,0,36,0) 0%, rgba(255,0,0,0.7) 100%)")
+  document.body.appendChild(glowElement)
+  applyGlowToElement(glowElement);
+}
+
+
+function containsOnlyItems(tbodyElements) {
+  const targetItems = [1593, 1591, 1589, 1590, 1587, 1588, 1594, 1584, 1521, 1524, 1597]; // Item IDs to check for
+
+  const targetIds = []
+
+
+  for (const tbody of tbodyElements) {
+    console.log(tbody)
+
+
+    const ticketItems = tbody.querySelectorAll(".ticket-item");
+    const itemIds = Array.from(ticketItems).map(item => parseInt(item.getAttribute("product-id")));
+    console.log("itemIds", itemIds)
+    const containsOnly = itemIds.every(itemId => targetItems.includes(itemId));
+    console.log("containsOnly", containsOnly)
+    if (containsOnly) {
+      let ticketID = tbody.getAttribute("ticketid")
+      console.log("ticketID", ticketID)
+
+      targetIds.push(ticketID)
+      isGlowing = true
+      // Ako narudžba sadrži samo artikle iz liste targetItems, pronađi roditeljski element s ID-om mainTableRow i primijeni stil na njega      
+
+
+    } else isGlowing = false
+
+
+  }
+  console.log("targetids", targetIds)
+
+  for (const tbody of tbodyElements) {
+
+    let ticketID = tbody.getAttribute("ticketid")
+    if (targetIds.includes(ticketID)) {
+      tbody.style.boxShadow = "0 0 5px 5px  red";
+
+      notificirajElementi.push(tbody)
+    }
+
+
+
+  }
+
+
+
+}
+
+
+mainTable.addEventListener('touchmove', () => {
+  console.log(notificirajElementi)
+
+})
+
+mainTable.addEventListener('scroll', function (event) {
+  const element = event.target;
+
+  if (element.scrollLeft > 0) {
+    console.log('Horizontal scroll detected!');
+    console.log(notificirajElementi);
+
+    isGlowing = false
+
+    notificirajElementi.forEach((element) => {
+
+      const rect = element.getBoundingClientRect();
+
+      // Dohvaćanje koordinata gornjeg lijevog kutka elementa u odnosu na viewport
+      const topInView = rect.top + window.scrollY;
+      const leftInView = rect.left + window.scrollX;
+
+
+      // Provjera je li element unutar vidljivog dijela viewporta
+      if (topInView >= 0 && leftInView >= 0 && topInView <= window.innerHeight && leftInView <= window.innerWidth) {
+        // Ako je unutar viewporta, postavite crvenu obrubu
+
+      } else {
+        // Ako nije unutar viewporta, uklonite crvenu obrubu
+        isGlowing = true
+      }
+    })
+
+  }
+});
+
+let blinkInterval;
+function applyGlowToElement() {
+
+
+  // Funkcija koja mijenja boju outline-a kako bi blinkao
+  function toggleOutline() {
+    if (isGlowing) {
+
+      const currentOpacity = glowElement.style.opacity
+      if (currentOpacity === `1`) {
+        glowElement.style.opacity = "0";
+      } else {
+        glowElement.style.opacity = `1`;
+      }
+    } else glowElement.style.opacity = "0"
+  }
+
+  // Pokretanje intervala koji mijenja boju outline-a
+  blinkInterval = setInterval(toggleOutline, 500); // Promijenite 500 na željeni interval blinkanja (u milisekundama)
+
+
+
+
+}
+
+
+let bitniArtikli = [1624]
+
+function importantArticle() {
+  const trs = document.querySelectorAll(".ticket-item")
+  console.log(trs)
+
+  for (const tr of trs) {
+    console.log(tr)
+    const productID = tr.getAttribute('product-id')
+    console.log(productID)
+    if (bitniArtikli.includes(parseInt(productID))) tr.style.setProperty("border", "2px solid red")
+    else tr.style.borderColor = ""
+  }
+}
+
+
+
+
 window.addEventListener("load", () => {
-  const storedItems = localStorage.getItem('sortedItems');
-  const storedTheme = localStorage.getItem('theme');
   const storedRadnik = localStorage.getItem("odabraniRadnik")
   const odabranaBoja = localStorage.getItem("odabranaBoja")
+  const storedItems = localStorage.getItem('sortedItems');
+  const storedTheme = localStorage.getItem('theme');
   const tbodyElements = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket");
 
+  importantArticle()
 
+  const nav = document.getElementById("navigacija");
+  console.log("nav: ", nav);
+  if (nav) {
+    const navHeight = nav.offsetHeight;
+    console.log("NavHeight", navHeight);
+
+    createGlowElement(navHeight)
+  } else createGlowElement("45")
+
+
+
+
+
+
+
+
+
+
+
+
+  console.log("storedItems:", storedItems)
 
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
   const ticketNumbersUnique = [...new Set(ticketNumbers)];
+
 
   chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (response) {
     console.log("Poruka poslana na stražnji kraj.");
@@ -273,26 +451,39 @@ window.addEventListener("load", () => {
     });
   }
 
+
+
   if (storedTheme) {
     theme = storedTheme;
     boje = theme === "neon" ? theme.neon : theme.pastele;
   }
 
   if (storedItems) {
+    console.log("localItems ", storedItems)
     const sortedItems = JSON.parse(storedItems);
-    sortedItems.forEach(item => {
-      allTicketItems[item.itemId] = item;
+
+    chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
+
+      console.log("Odgovor od background skripte (allTicketItems):", response);
+      // Ovdje možete obraditi odgovor ako je potrebno
     });
+    console.log("sortedItems: ", sortedItems)
   } else {
     console.log('Podaci nisu pronađeni u lokalnoj pohrani.');
   }
 
+  tbodyElements.forEach((tbody) => {
+    processTicket(tbody)
+
+  });
+
   const tabContent = document.querySelector(".tab-content");
-  const mainTable = document.querySelector("#mainTable");
+  mainTable = document.querySelector("#mainTable");
 
   if (tabContent) tabContent.style.setProperty("height", "80vh");
   if (mainTable) mainTable.style.setProperty("height", "100%");
 
+  containsOnlyItems(tbodyElements)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
@@ -303,22 +494,36 @@ window.addEventListener("load", () => {
         ) {
 
 
-          const innerDiv = node.querySelector(".ticket_first_half_completed");
+
+
+          if (mainTable) mainTable.style.setProperty("height", "100%");
+          tabContent.style.setProperty("height", "90vh");
           const ticketId = node.getAttribute("ticketid");
           let color;
-
+          if (orderIdColorMap[ticketId]) {
+            color = orderIdColorMap[ticketId];
+          } else {
+            color = chooseNextColor();
+            orderIdColorMap[ticketId] = color;
+          }
+          const innerDiv = node.querySelector(".ticket_first_half_completed");
           if (innerDiv) {
             innerDiv.style.backgroundColor = color;
           }
           applyStylingToNewElement(node, color);
           processTicket(node);
+          importantArticle()
+          containsOnlyItems([node])
 
           node.addEventListener("click", () => {
+            console.log("CLICK")
+            const currentlySelected = document.querySelectorAll(".selected-ticket")
             const tbodyElements = document.querySelectorAll("#mainTableRow tbody");
+            console.log(currentlySelected)
             tbodyElements.forEach((tbody) => {
               if (tbody.classList.contains("selected-ticket")) selectedId = tbody.getAttribute("ticket_id");
               if (!tbody.classList.contains("selected-ticket") && tbody.getAttribute("ticket_id") === selectedId) {
-                currentlySelected.style.outline = "5px solid red";
+                currentlySelected[0].style.outline = "5px solid red";
               }
               if (!tbody.classList.contains("selected-ticket")) {
                 tbody.style.outline = "none";

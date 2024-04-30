@@ -30,8 +30,8 @@ async function savePopisArtikalaItemsToSupabase(popisArtikala) {
                 'Authorization': `Bearer ${supabaseKey}`,
             },
             body: JSON.stringify(popisArtikala.map(item => ({
-                naziv_artikla: item.naziv_artikla,
-                id_artikla: item.id_artikla
+                naziv_artikla: item.itemName,
+                id_artikla: item.itemId
             })))
         });
 
@@ -70,7 +70,7 @@ async function removeExistingArikles(sviArtikli) {
 
     console.log("svi", sviArtikli)
     console.log("stari", stariArtikli)
-    const noviArtikli = sviArtikli.filter((artikl) => !stariArtikli.some((sa) => sa.id_artikla === artikl.id_artikla))
+    const noviArtikli = sviArtikli.filter((artikl) => !stariArtikli.some((sa) => sa.id_artikla === artikl.itemId))
 
     console.log("novi", noviArtikli)
     savePopisArtikalaItemsToSupabase(noviArtikli)
@@ -160,6 +160,11 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
     console.log(message);
 
+    if (message.allTicketItems) {
+        removeExistingArikles(message.allTicketItems)
+        return true
+    }
+
     if (message.action === "fetchActiveTickets") {
         try {
             const responseData = await fetchActiveTickets();
@@ -206,5 +211,3 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         return true;
     }
 });
-
-
