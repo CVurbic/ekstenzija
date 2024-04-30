@@ -323,6 +323,7 @@ mainTable.addEventListener('scroll', function (event) {
 
       // Provjera je li element unutar vidljivog dijela viewporta
       if (topInView >= 0 && leftInView >= 0 && topInView <= window.innerHeight && leftInView <= window.innerWidth) {
+        element.style.boxShadow = "0 0 5px 5px  red";
         // Ako je unutar viewporta, postavite crvenu obrubu
 
       } else {
