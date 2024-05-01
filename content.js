@@ -6,6 +6,11 @@ let sveBoje = [];
 let mojaBoja = undefined;
 let uIzradi = []
 let odabraniRadnik = undefined
+let bitniArtikli = undefined
+let onOffCollors = false;
+let settings = { onOffCollors: false, highlightArticle: 0 };
+const allTicketItems = {};
+
 const poslovnica = "CCOE"
 const tabContent = document.querySelector(".tab-content")
 const notificirajArtikli = [1424, 1425, 1426, 1429, 1430, 1434, 1435, 1437, 1441, 1468, 1475, 1488, 1491, 1492, 1520, 1521, 1524, 1581, 1582, 1583, 1584, 1585, 1587, 1588, 1589, 1590, 1591, 1593, 1594, 1595, 1597, 1598, 1871, 1872, 1884, 1886, 1887, 1888, 1889, 1890, 1891, 1924, 1925, 1947, 1948]
@@ -14,7 +19,12 @@ const notificirajElementi = []
 let mainTable = document.querySelector("#mainTable");
 let glowElement = document.querySelector(".glow")
 
-const allTicketItems = {};
+let storedSettings = JSON.parse(localStorage.getItem("settings"))
+if (storedSettings) {
+  settings = storedSettings
+  bitniArtikli = settings.highlightArticle
+}
+
 
 function hexToRgba(hex) {
   hex = hex.replace(/^#?([a-f\d])([a-f\d])([a-f\d])$/i, (m, r, g, b) => {
@@ -34,6 +44,7 @@ function hexToRgba(hex) {
 }
 
 function chooseNextColor() {
+
   const colorCount = boje.length;
   if (currentIndex >= colorCount) {
     currentIndex = 0;
@@ -58,12 +69,10 @@ function processTicket(tbody) {
   });
 
   const sortedItems = Object.values(allTicketItems).sort((a, b) => a.itemId - b.itemId);
-  console.log("alltivketitems ", sortedItems)
   localStorage.setItem('sortedItems', JSON.stringify(sortedItems));
 
   chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
 
-    console.log("Odgovor od background skripte (allTicketItems):", response);
     // Ovdje možete obraditi odgovor ako je potrebno
   });
 }
@@ -112,7 +121,7 @@ function processThemes(themes) {
 
   themes.forEach((tema) => {
     const temaNaziv = tema.theme;
-    const boje = JSON.parse(tema.colors);
+    boje = JSON.parse(tema.colors);
     sveBoje.push({ tema: temaNaziv, boje: boje });
   });
 
@@ -135,9 +144,29 @@ function setInitialTheme(tbodyElements, storedTheme) {
 
   changeColor(tbodyElements);
 }
-
+//DOHVACANJE MESSAGE
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
+
+  if (message.coloredTickets !== undefined) {
+
+  }
+
+
+  if (message.settings) {
+    bitniArtikli = message.settings.highlightArticle
+    importantArticle()
+
+    highlightArticle(bitniArtikli);
+
+    onOffCollors = message.settings.onOffCollors;
+    settings.onOffCollors = onOffCollors
+    localStorage.setItem("settings", JSON.stringify(settings))
+    location.reload();
+    if (onOffCollors) {
+      changeColor(document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket"));
+    }
+  }
   if (message.odabraniRadnik) {
     localStorage.setItem('odabraniRadnik', message.odabraniRadnik);
     const body = document.querySelector("body")
@@ -147,7 +176,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     bojaInput.addEventListener('change', function () {
 
       let odabranaBoja = this.value;
-      console.log(odabranaBoja)
       mojaBoja = odabranaBoja
       localStorage.setItem(`odabranaBoja`, odabranaBoja)
     });
@@ -180,17 +208,13 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
 
 
 
-    // Spremi odabrani radnik u localStorage
-    console.log(message.odabraniRadnik)
   }
 
-
-  if (message.themes) {
+  if (message.themes && settings.onOffCollors) {
     processThemes(message.themes);
   }
 
-  if (message.odabranaTema) {
-    console.log(message)
+  if (message.odabranaTema && settings.onOffCollors) {
     theme = message.odabranaTema;
     const selectedTheme = sveBoje.find(item => item.tema.toLowerCase() === theme.toLowerCase());
     if (selectedTheme) {
@@ -198,8 +222,6 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
       localStorage.setItem('theme', message.odabranaTema);
       Object.keys(orderIdColorMap).forEach(key => delete orderIdColorMap[key]);
       changeColor(document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket"));
-    } else {
-      console.log("Odabrana tema nije pronađena.");
     }
   }
   if (message.popisArtikala) {
@@ -216,14 +238,8 @@ tabContent.addEventListener('click', function (e) {
     var ticketNumber = ticketElement.getAttribute("ticketnumber");
     var ticketId = ticketElement.getAttribute("ticketid");
 
-    // Sada možemo koristiti ove atribute kako želimo, na primjer:
-    console.log("Broj karte:", ticketNumber);
-    console.log("ID karte:", ticketId);
-
 
     chrome.runtime.sendMessage({ action: "fetchActiveTickets" }, function (response) {
-      console.log(response)
-      console.log("Odgovor od background skripte:", response);
       // Ovdje možete obraditi odgovor ako je potrebno
     });
   }
@@ -253,32 +269,32 @@ function createGlowElement(navHeight) {
 function containsOnlyItems(tbodyElements) {
   const targetItems = [1593, 1591, 1589, 1590, 1587, 1588, 1594, 1584, 1521, 1524, 1597]; // Item IDs to check for
 
+  let blacklistTickets = []
   const targetIds = []
 
 
   for (const tbody of tbodyElements) {
-    console.log(tbody)
 
+    const ticketID = tbody.getAttribute("ticketid")
+    if (blacklistTickets.includes(ticketID)) continue
 
     const ticketItems = tbody.querySelectorAll(".ticket-item");
     const itemIds = Array.from(ticketItems).map(item => parseInt(item.getAttribute("product-id")));
-    console.log("itemIds", itemIds)
     const containsOnly = itemIds.every(itemId => targetItems.includes(itemId));
-    console.log("containsOnly", containsOnly)
+
     if (containsOnly) {
       let ticketID = tbody.getAttribute("ticketid")
-      console.log("ticketID", ticketID)
 
       targetIds.push(ticketID)
       isGlowing = true
       // Ako narudžba sadrži samo artikle iz liste targetItems, pronađi roditeljski element s ID-om mainTableRow i primijeni stil na njega      
 
 
-    } else isGlowing = false
-
-
+    } else {
+      blacklistTickets.push(ticketID)
+      isGlowing = false
+    }
   }
-  console.log("targetids", targetIds)
 
   for (const tbody of tbodyElements) {
 
@@ -298,17 +314,11 @@ function containsOnlyItems(tbodyElements) {
 }
 
 
-mainTable.addEventListener('touchmove', () => {
-  console.log(notificirajElementi)
-
-})
 
 mainTable.addEventListener('scroll', function (event) {
   const element = event.target;
 
   if (element.scrollLeft > 0) {
-    console.log('Horizontal scroll detected!');
-    console.log(notificirajElementi);
 
     isGlowing = false
 
@@ -359,22 +369,38 @@ function applyGlowToElement() {
 
 
 }
+let firstLoad = true
 
-
-let bitniArtikli = [1624]
 
 function importantArticle() {
   const trs = document.querySelectorAll(".ticket-item")
-  console.log(trs)
-
+  let storedHighlightedArticles = undefined
+  if (firstLoad) {
+    storedHighlightedArticles = JSON.parse(localStorage.getItem("settings")).highlightArticle || [];
+  }
+  firstLoad = false;
   for (const tr of trs) {
-    console.log(tr)
-    const productID = tr.getAttribute('product-id')
-    console.log(productID)
-    if (bitniArtikli.includes(parseInt(productID))) tr.style.setProperty("border", "2px solid red")
-    else tr.style.borderColor = ""
+    const productID = tr.getAttribute('product-id');
+    if (
+      (storedHighlightedArticles && parseInt(storedHighlightedArticles) === parseInt(productID)) ||
+      (!storedHighlightedArticles && bitniArtikli.includes(parseInt(productID)))
+    ) {
+      tr.style.setProperty("border", "2px solid red");
+    } else {
+      tr.style.border = "none";
+    }
   }
 }
+
+// When an article is highlighted, store its ID in local storage
+function highlightArticle(articleID) {
+  let storedHighlightedArticles = JSON.parse(localStorage.getItem("highlightedArticles")) || [];
+  storedHighlightedArticles = articleID;
+  settings.highlightArticle = storedHighlightedArticles;
+  localStorage.setItem("settings", JSON.stringify(settings));
+}
+
+
 
 
 
@@ -386,13 +412,10 @@ window.addEventListener("load", () => {
   const storedTheme = localStorage.getItem('theme');
   const tbodyElements = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket");
 
-  importantArticle()
 
   const nav = document.getElementById("navigacija");
-  console.log("nav: ", nav);
   if (nav) {
     const navHeight = nav.offsetHeight;
-    console.log("NavHeight", navHeight);
 
     createGlowElement(navHeight)
   } else createGlowElement("45")
@@ -402,21 +425,12 @@ window.addEventListener("load", () => {
 
 
 
-
-
-
-
-
-
-  console.log("storedItems:", storedItems)
-
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
   const ticketNumbersUnique = [...new Set(ticketNumbers)];
 
 
   chrome.runtime.sendMessage({ ticketsUIzradi: ticketNumbersUnique }, function (response) {
-    console.log("Poruka poslana na stražnji kraj.");
   });
 
   if (storedRadnik) {
@@ -446,7 +460,6 @@ window.addEventListener("load", () => {
     bojaInput.addEventListener('change', function () {
 
       let odabranaBoja = this.value;
-      console.log(odabranaBoja)
       mojaBoja = odabranaBoja
       localStorage.setItem(`odabranaBoja`, odabranaBoja)
     });
@@ -460,19 +473,12 @@ window.addEventListener("load", () => {
   }
 
   if (storedItems) {
-    console.log("localItems ", storedItems)
     const sortedItems = JSON.parse(storedItems);
 
     chrome.runtime.sendMessage({ allTicketItems: sortedItems }, function (response) {
-
-      console.log("Odgovor od background skripte (allTicketItems):", response);
       // Ovdje možete obraditi odgovor ako je potrebno
     });
-    console.log("sortedItems: ", sortedItems)
-  } else {
-    console.log('Podaci nisu pronađeni u lokalnoj pohrani.');
   }
-
   tbodyElements.forEach((tbody) => {
     processTicket(tbody)
 
@@ -484,6 +490,7 @@ window.addEventListener("load", () => {
   if (tabContent) tabContent.style.setProperty("height", "80vh");
   if (mainTable) mainTable.style.setProperty("height", "100%");
 
+  importantArticle()
   containsOnlyItems(tbodyElements)
   const observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
@@ -494,33 +501,35 @@ window.addEventListener("load", () => {
           node.classList.contains("zero-progress-ticket")
         ) {
 
-
-
-
-          if (mainTable) mainTable.style.setProperty("height", "100%");
-          tabContent.style.setProperty("height", "90vh");
           const ticketId = node.getAttribute("ticketid");
+
           let color;
-          if (orderIdColorMap[ticketId]) {
-            color = orderIdColorMap[ticketId];
-          } else {
-            color = chooseNextColor();
-            orderIdColorMap[ticketId] = color;
+
+          if (onOffCollors) {
+            if (orderIdColorMap[ticketId]) {
+              color = orderIdColorMap[ticketId];
+            } else {
+              color = chooseNextColor();
+              orderIdColorMap[ticketId] = color;
+            }
+            const innerDiv = node.querySelector(".ticket_first_half_completed");
+            if (innerDiv) {
+              innerDiv.style.backgroundColor = color;
+            }
+
+            applyStylingToNewElement(node, color);
           }
-          const innerDiv = node.querySelector(".ticket_first_half_completed");
-          if (innerDiv) {
-            innerDiv.style.backgroundColor = color;
-          }
-          applyStylingToNewElement(node, color);
+
           processTicket(node);
           importantArticle()
           containsOnlyItems([node])
 
+          importantArticle()
+
           node.addEventListener("click", () => {
-            console.log("CLICK")
             const currentlySelected = document.querySelectorAll(".selected-ticket")
             const tbodyElements = document.querySelectorAll("#mainTableRow tbody");
-            console.log(currentlySelected)
+
             tbodyElements.forEach((tbody) => {
               if (tbody.classList.contains("selected-ticket")) selectedId = tbody.getAttribute("ticket_id");
               if (!tbody.classList.contains("selected-ticket") && tbody.getAttribute("ticket_id") === selectedId) {

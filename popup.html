@@ -56,6 +56,11 @@
       cursor: pointer;
     }
 
+button{
+  
+  text-transform: capitalize;
+}
+
     .themeButton:hover {
       background-color: #0056b3;
     }
@@ -74,28 +79,48 @@
       overflow: hidden;
       flex-wrap: wrap;
     }
-    label{
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
 
+#highlightArtikl{
+  width: 100%;
+}
 
+img{
+  width: 50%;
+  margin: 0 auto;
+}
+.container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
     </style>
   </head>
   <body>
-    <button id="refreshButton">Osvježi temu</button>
-    <div class="themeButtons">
-      <!-- Ovdje će se dinamički generisati dugmad za teme -->
-    </div>
-    <div class="setUpRadnikContainer">
+    <!--
+<button id="refreshButton">Osvježi temu</button> -->
+    <!-- <div class="setUpRadnikContainer">
       <label>
         Broj radnika:
         <input class="brojRadnikaInput" type="number" value="2" min="1" max="8">
       </label>
       <div class="odabirRadnikaContainer">
-        <!-- Ovdje ce se dinamicki generirati za odabir radnika za pojedini zaslon -->
+        Ovdje ce se dinamicki generirati za odabir radnika za pojedini zaslon 
+      </div>
+    </div> -->
+    <div class="container">
+      <img src="./settingsSvg.svg" alt="logo">
+      <div>
+        <h3>Ukljući / Iskljući boje:</h3>
+        <input type="checkbox" name="colorCheckbox" id="colorCheckbox">
+        <h3>Naglasi artikl:</h3>
+        <select name="highlightArtikl" id="highlightArtikl">
+          <option value="0">Default</option>
+        </select>
+      </div>
+      <h3>Odaberi temu:</h3>
+      <div class="themeButtons">
+        <!-- Ovdje će se dinamički generisati dugmad za teme -->
       </div>
     </div>
     <script src="popup.js"></script>

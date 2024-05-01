@@ -2,6 +2,25 @@ const supabaseUrl = 'https://xxqeupvmmmxltbtxcgvp.supabase.co/rest/v1';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cWV1cHZtbW14bHRidHhjZ3ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Njk1Nzk3MDYsImV4cCI6MTk4NTE1NTcwNn0.Pump9exBhsc1TbUGqegEsqIXnmsmlUZMVlo2gSHoYDo';
 
 const poslovnica = "CCOE"
+let highlightArtiklID
+
+
+chrome.storage.local.get("settings", function (data) {
+
+    console.log(data)
+    highlightArtiklID = data.settings.highlightArticle;
+    console.log(highlightArtiklID)
+    if (highlightArtiklID) {
+
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, { highlightArtiklID: highlightArtiklID });
+        })
+    }
+    console.log("Trenutna vrijednost highlightArtiklID:", highlightArtiklID);
+});
+
+console.log("Trenutna vanjska vrijednost highlightArtiklID:", highlightArtiklID);
+
 
 
 async function fetchTheme() {
@@ -18,7 +37,31 @@ async function fetchTheme() {
     return await response.json();
 }
 
+// Prati promjene u lokalnoj pohrani
+chrome.storage.onChanged.addListener(function (changes, namespace) {
+    for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+        console.log(key)
+        if (key === "settings") {
 
+            console.log(oldValue, newValue)
+
+            if (oldValue.highlightArticle !== newValue.highlightArticle) {
+                console.log("Nova vrijednost highlightArtiklID:", newValue.highlightArticle);
+            }
+
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+                if (tabs && tabs.length > 0) {
+                    chrome.tabs.sendMessage(tabs[0].id, { settings: newValue });
+                } else {
+                    console.error("No active tabs found.");
+                }
+            });
+
+        }
+    }
+
+
+});
 
 async function savePopisArtikalaItemsToSupabase(popisArtikala) {
     try {
@@ -60,7 +103,6 @@ async function fetchPopisArtikala() {
         throw new Error('Unable to fetch popisArtikala from Supabase');
     }
     const responseData = await response.json(); // Pokušaj parsiranja JSON-a
-    console.log("Supa popis artikla: ", responseData)
     return responseData; // Vrati parsirane podatke
 }
 
@@ -68,11 +110,8 @@ async function fetchPopisArtikala() {
 async function removeExistingArikles(sviArtikli) {
     const stariArtikli = await fetchPopisArtikala();
 
-    console.log("svi", sviArtikli)
-    console.log("stari", stariArtikli)
     const noviArtikli = sviArtikli.filter((artikl) => !stariArtikli.some((sa) => sa.id_artikla === artikl.itemId))
 
-    console.log("novi", noviArtikli)
     savePopisArtikalaItemsToSupabase(noviArtikli)
 
 }
@@ -86,16 +125,14 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
                 // Ako je tab aktivan, pošaljite poruku u content skript
                 fetchTheme()
                     .then(data => {
-                        console.log(data);
                         chrome.tabs.sendMessage(tabId, { themes: data });
+                        chrome.storage.local.set({ themes: data })
                     })
                     .catch(error => {
                         console.error('Greška pri dohvaćanju podataka o temama:', error);
                     });
                 fetchPopisArtikala()
                     .then(popisArtikala => {
-                        console.log("Poslao artikle");
-
                         chrome.storage.local.set({ popisArtikala: popisArtikala })
                     })
                     .catch(error => {
@@ -123,7 +160,6 @@ async function sendActiveTickets(tickets) {
         });
 
         if (!response.ok) {
-            console.log(response)
             throw new Error('Unable to send current tickets to supa');
         }
 
@@ -149,7 +185,6 @@ async function fetchActiveTickets() {
         throw new Error('Unable to fetch popisArtikala from Supabase');
     }
     const responseData = await response.json(); // Pokušaj parsiranja JSON-a
-    console.log("Supa popis trenutnih narudzbi: ", responseData)
     return responseData; // Vrati parsirane podatke
 
 }
@@ -157,9 +192,7 @@ async function fetchActiveTickets() {
 
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-    console.log(sender.tab ? "from a content script:" + sender.tab.url : "from the extension");
-    console.log(message);
-
+    console.log("bg", message)
     if (message.allTicketItems) {
         removeExistingArikles(message.allTicketItems)
         return true
@@ -168,7 +201,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
     if (message.action === "fetchActiveTickets") {
         try {
             const responseData = await fetchActiveTickets();
-            console.log("Odgovor od background skripte:", JSON.stringify(responseData));
             sendResponse(JSON.stringify(responseData));
             return true;
         } catch (error) {
@@ -185,7 +217,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         const noveNarudzbe = trenutneNarudzbeNaEkranu.filter(narudzba => {
             return !trenutneNarudzbeUSupa.some(n => parseInt(n.broj_narudzbe) === parseInt(narudzba));
         });
-        console.log("Nove narudžbe", noveNarudzbe);
 
         sendActiveTickets(noveNarudzbe)
             .then(() => {
@@ -211,3 +242,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         return true;
     }
 });
+
+
+
