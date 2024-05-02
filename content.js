@@ -16,7 +16,6 @@ const tabContent = document.querySelector(".tab-content")
 const notificirajArtikli = [1424, 1425, 1426, 1429, 1430, 1434, 1435, 1437, 1441, 1468, 1475, 1488, 1491, 1492, 1520, 1521, 1524, 1581, 1582, 1583, 1584, 1585, 1587, 1588, 1589, 1590, 1591, 1593, 1594, 1595, 1597, 1598, 1871, 1872, 1884, 1886, 1887, 1888, 1889, 1890, 1891, 1924, 1925, 1947, 1948]
 const notificirajElementi = []
 
-let mainTable = document.querySelector("#mainTable");
 let glowElement = document.querySelector(".glow")
 
 let storedSettings = JSON.parse(localStorage.getItem("settings"))
@@ -266,84 +265,43 @@ function createGlowElement(navHeight) {
 }
 
 
-function containsOnlyItems(tbodyElements) {
+function containsOnlyItems() {
+  const tbodyElements = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket");
+
   const targetItems = [1593, 1591, 1589, 1590, 1587, 1588, 1594, 1584, 1521, 1524, 1597]; // Item IDs to check for
 
-  let blacklistTickets = []
-  const targetIds = []
+  let blacklistTickets = [];
+  const targetIds = [];
 
-
-  for (const tbody of tbodyElements) {
-
-    const ticketID = tbody.getAttribute("ticketid")
-    if (blacklistTickets.includes(ticketID)) continue
+  tbodyElements.forEach((tbody) => {
+    const ticketID = tbody.getAttribute("ticketid");
+    if (blacklistTickets.includes(ticketID)) return;
 
     const ticketItems = tbody.querySelectorAll(".ticket-item");
-    const itemIds = Array.from(ticketItems).map(item => parseInt(item.getAttribute("product-id")));
-    const containsOnly = itemIds.every(itemId => targetItems.includes(itemId));
+    const itemIds = Array.from(ticketItems).map((item) => parseInt(item.getAttribute("product-id")));
+    const containsOnly = itemIds.every((itemId) => targetItems.includes(itemId));
 
     if (containsOnly) {
-      let ticketID = tbody.getAttribute("ticketid")
-
-      targetIds.push(ticketID)
-      isGlowing = true
-      // Ako narudžba sadrži samo artikle iz liste targetItems, pronađi roditeljski element s ID-om mainTableRow i primijeni stil na njega      
-
-
+      targetIds.push(ticketID);
+      isGlowing = true;
     } else {
-      blacklistTickets.push(ticketID)
-      isGlowing = false
+      blacklistTickets.push(ticketID);
+      isGlowing = false;
     }
-  }
+  });
 
-  for (const tbody of tbodyElements) {
-
-    let ticketID = tbody.getAttribute("ticketid")
+  tbodyElements.forEach((tbody) => {
+    const ticketID = tbody.getAttribute("ticketid");
     if (targetIds.includes(ticketID)) {
       tbody.style.boxShadow = "0 0 5px 5px  red";
-
-      notificirajElementi.push(tbody)
+      notificirajElementi.push(tbody);
     }
-
-
-
-  }
-
-
-
+  });
 }
 
 
 
-mainTable.addEventListener('scroll', function (event) {
-  const element = event.target;
 
-  if (element.scrollLeft > 0) {
-
-    isGlowing = false
-
-    notificirajElementi.forEach((element) => {
-
-      const rect = element.getBoundingClientRect();
-
-      // Dohvaćanje koordinata gornjeg lijevog kutka elementa u odnosu na viewport
-      const topInView = rect.top + window.scrollY;
-      const leftInView = rect.left + window.scrollX;
-
-
-      // Provjera je li element unutar vidljivog dijela viewporta
-      if (topInView >= 0 && leftInView >= 0 && topInView <= window.innerHeight && leftInView <= window.innerWidth) {
-        element.style.boxShadow = "0 0 5px 5px  red";
-        // Ako je unutar viewporta, postavite crvenu obrubu
-
-      } else {
-        // Ako nije unutar viewporta, uklonite crvenu obrubu
-        isGlowing = true
-      }
-    })
-
-  }
-});
 
 let blinkInterval;
 function applyGlowToElement() {
@@ -385,7 +343,7 @@ function importantArticle() {
       (storedHighlightedArticles && parseInt(storedHighlightedArticles) === parseInt(productID)) ||
       (!storedHighlightedArticles && bitniArtikli.includes(parseInt(productID)))
     ) {
-      tr.style.setProperty("border", "2px solid red");
+      tr.style.setProperty("background", "red");
     } else {
       tr.style.border = "none";
     }
@@ -419,11 +377,6 @@ window.addEventListener("load", () => {
 
     createGlowElement(navHeight)
   } else createGlowElement("45")
-
-
-
-
-
 
   const tbodyArray = Array.from(tbodyElements);
   const ticketNumbers = tbodyArray.map((element) => element.getAttribute("ticketnumber"));
@@ -486,6 +439,42 @@ window.addEventListener("load", () => {
 
   const tabContent = document.querySelector(".tab-content");
   mainTable = document.querySelector("#mainTable");
+
+
+
+
+  mainTable.addEventListener('scroll', function (event) {
+    const element = event.target;
+
+    if (element.scrollLeft > 0) {
+
+      isGlowing = false
+
+      notificirajElementi.forEach((element) => {
+
+        const rect = element.getBoundingClientRect();
+
+        // Dohvaćanje koordinata gornjeg lijevog kutka elementa u odnosu na viewport
+        const topInView = rect.top + window.scrollY;
+        const leftInView = rect.left + window.scrollX;
+
+
+        // Provjera je li element unutar vidljivog dijela viewporta
+        if (topInView >= 0 && leftInView >= 0 && topInView <= window.innerHeight && leftInView <= window.innerWidth) {
+          element.style.boxShadow = "0 0 5px 5px  red";
+          // Ako je unutar viewporta, postavite crvenu obrubu
+
+        } else {
+          // Ako nije unutar viewporta, uklonite crvenu obrubu
+          isGlowing = true
+        }
+      })
+
+    }
+  });
+
+
+
 
   if (tabContent) tabContent.style.setProperty("height", "80vh");
   if (mainTable) mainTable.style.setProperty("height", "100%");

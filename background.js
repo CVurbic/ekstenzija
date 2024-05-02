@@ -64,6 +64,7 @@ chrome.storage.onChanged.addListener(function (changes, namespace) {
 });
 
 async function savePopisArtikalaItemsToSupabase(popisArtikala) {
+    console.log(popisArtikala);
     try {
         const response = await fetch(`${supabaseUrl}/artikliRemaris`, {
             method: 'POST',
@@ -111,8 +112,7 @@ async function removeExistingArikles(sviArtikli) {
     const stariArtikli = await fetchPopisArtikala();
 
     const noviArtikli = sviArtikli.filter((artikl) => !stariArtikli.some((sa) => sa.id_artikla === artikl.itemId))
-
-    savePopisArtikalaItemsToSupabase(noviArtikli)
+    if (noviArtikli.lenght > 0) savePopisArtikalaItemsToSupabase(noviArtikli)
 
 }
 fetchTheme()
@@ -145,6 +145,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
 
 
 async function sendActiveTickets(tickets) {
+    console.log(tickets)
     try {
         const response = await fetch(`${supabaseUrl}/remarisNarudzbe`, {
             method: 'POST',
@@ -192,7 +193,7 @@ async function fetchActiveTickets() {
 
 
 chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
-    console.log("bg", message)
+
     if (message.allTicketItems) {
         removeExistingArikles(message.allTicketItems)
         return true
@@ -217,15 +218,16 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
         const noveNarudzbe = trenutneNarudzbeNaEkranu.filter(narudzba => {
             return !trenutneNarudzbeUSupa.some(n => parseInt(n.broj_narudzbe) === parseInt(narudzba));
         });
-
-        sendActiveTickets(noveNarudzbe)
-            .then(() => {
-                sendResponse({ success: true });
-            })
-            .catch(error => {
-                console.error('Greška pri spremanju sortiranih stavki na Supabase:', error);
-                sendResponse({ success: false });
-            });
+        if (noveNarudzbe.length > 0) {
+            sendActiveTickets(noveNarudzbe)
+                .then(() => {
+                    sendResponse({ success: true });
+                })
+                .catch(error => {
+                    console.error('Greška pri spremanju sortiranih stavki na Supabase:', error);
+                    sendResponse({ success: false });
+                });
+        }
         return true;
     }
 
