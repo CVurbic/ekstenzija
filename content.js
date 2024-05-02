@@ -334,7 +334,7 @@ function importantArticle() {
   const trs = document.querySelectorAll(".ticket-item")
   let storedHighlightedArticles = undefined
   if (firstLoad) {
-    storedHighlightedArticles = JSON.parse(localStorage.getItem("settings")).highlightArticle || [];
+    storedHighlightedArticles = JSON.parse(localStorage.getItem("settings")).highlightArticle || 0;
   }
   firstLoad = false;
   for (const tr of trs) {
