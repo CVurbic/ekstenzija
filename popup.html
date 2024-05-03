@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refresh Extension</title>
+    <style>
+      html{
+        margin: 0;
+        background-color: #dac9b9;
+    box-shadow: inset 0 0 100px rgba(255, 255, 255, 0.9);
+    background-image: url("./light-wool-1920x1080.png");
+      }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      display: flex;
+      gap: 1rem;
+      flex-direction: column;
+      width:250px;
+    }
+
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      margin: 0 auto;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .themeButtons {
+      display: flex;
+      gap: 0.25rem;
+      justify-content: center;
+    }
+
+    .themeButton {
+      margin: 0 10px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+button{
+  
+  text-transform: capitalize;
+}
+
+    .themeButton:hover {
+      background-color: #0056b3;
+    }
+
+
+    .setUpRadnikContainer{
+      padding: 0.5rem;
+      border: 1px solid gray;
+      border-radius: 0.75rem;
+      background-color: #a8a8a880;
+    }
+
+    .odabirRadnikaContainer{
+      display: flex;
+      justify-content: space-around;
+      overflow: hidden;
+      flex-wrap: wrap;
+    }
+
+#highlightArtikl{
+  width: 100%;
+}
+
+img{
+  width: 50%;
+  margin: 0 auto;
+}
+.container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+    </style>
+  </head>
+  <body>
+    <!--
+<button id="refreshButton">Osvježi temu</button> -->
+    <!-- <div class="setUpRadnikContainer">
+      <label>
+        Broj radnika:
+        <input class="brojRadnikaInput" type="number" value="2" min="1" max="8">
+      </label>
+      <div class="odabirRadnikaContainer">
+        Ovdje ce se dinamicki generirati za odabir radnika za pojedini zaslon 
+      </div>
+    </div> -->
+    <div class="container">
+      <img src="./settingsSvg.svg" alt="logo">
+      <div>
+        <h3>Ukljući / Iskljući boje:</h3>
+        <input type="checkbox" name="colorCheckbox" id="colorCheckbox">
+        <h3>Naglasi artikl:</h3>
+        <select name="highlightArtikl" id="highlightArtikl">
+          <option value="0">Default</option>
+        </select>
+      </div>
+      <h3>Odaberi temu:</h3>
+      <div class="themeButtons">
+        <!-- Ovdje će se dinamički generisati dugmad za teme -->
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
