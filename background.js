@@ -133,6 +133,7 @@ chrome.tabs.onUpdated.addListener(function (tabId, changeInfo, tab) {
                     });
                 fetchPopisArtikala()
                     .then(popisArtikala => {
+                        chrome.tabs.sendMessage(tabId, { popisArtikala: popisArtikala });
                         chrome.storage.local.set({ popisArtikala: popisArtikala })
                     })
                     .catch(error => {
