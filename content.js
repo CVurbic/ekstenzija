@@ -10,9 +10,9 @@ let boje = "";
 let sveBoje = [];
 let currentIndex = 0;
 let newColors = [{
-    glovo: "FFC244",
-    ovdje: "",
-    van: "",
+    glovo: { header: "rgba(0,160,30,1)", body: "rgba(255,194,68,0.5)" },
+    ovdje: { header: "rgba(57,181,224,1)", body: "rgba(57,181,224,0.5)" },
+    van: { header: "rgba(255,77,77,1)", body: "rgba(255,77,77,0.5)" },
 }]
 
 
@@ -43,6 +43,11 @@ window.addEventListener("load", () => {
                 ) {
                     //Sve što zelimo napraviti na sa ticketima mora ići ovdje
 
+
+
+                    if (settings.onOffCollors) addColorToTicket()
+                    /* const ticketId = node.getAttribute("ticketid")
+
                     if (settings.onOffCollors && boje !== "") {
                         if (orderIdColorMap[ticketId]) {
                             color = orderIdColorMap[ticketId];
@@ -56,7 +61,7 @@ window.addEventListener("load", () => {
                         }
 
                         applyStylingToNewElement(node, color);
-                    }
+                    } */
 
                     easyToMakeTicketsHighlighter()
                     importantArticle()
@@ -83,7 +88,7 @@ window.addEventListener("load", () => {
     easyToMakeTicketsHighlighter()
     importantArticle()
     hideGlowElement()
-
+    if (settings.onOffCollors) addColorToTicket()
 
 
 
@@ -105,7 +110,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     if (message.settings) {
         settings = message.settings
         if (settings.onOffCollors && boje !== "") {
-            changeColor();
+            addColorToTicket();
         }
         if (!settings.onOffCollors) {
             setStoredData("theme", "")
@@ -438,4 +443,84 @@ function hexToRgba(hex) {
     const b = parseInt(result[3], 16);
 
     return `rgba(${r}, ${g}, ${b}, ${0.5})`;
+}
+
+
+//COSTUMIZE TICKETS DEPENDING ON TICKETCODE
+function addColorToTicket() {
+    const allTickets = document.querySelectorAll("#mainTableRow tbody.zero-progress-ticket")
+
+    allTickets.forEach((ticket) => {
+        ticketCode = ticket.getAttribute("table-code")
+
+        let headerColor, bodyColor;
+        console.log(ticketCode)
+        switch (ticketCode) {
+            case "GLOVO":
+                headerColor = newColors[0].glovo.header;
+                bodyColor = newColors[0].glovo.body;
+                break;
+            case "ZA OVDJE":
+                headerColor = newColors[0].ovdje.header;
+                bodyColor = newColors[0].ovdje.body;
+                break;
+            case "ZA VAN":
+                headerColor = newColors[0].van.header;
+                bodyColor = newColors[0].van.body;
+                break;
+            case "Kiosk":
+                const descriptionRow = ticket.querySelector(".ticket-table-description");
+                console.log(descriptionRow)
+                if (descriptionRow) {
+                    const descriptionText = descriptionRow.textContent.trim();
+                    console.log(descriptionText.includes("ZA VAN"))
+                    // Ovdje možete provjeriti što je u descriptionText-u i postaviti boje temeljem njega
+                    if (descriptionText.includes("ZA VAN")) {
+                        headerColor = newColors[0].van.header;
+                        bodyColor = newColors[0].van.body;
+                    } else if (descriptionText.includes("ZA OVDJE")) {
+                        headerColor = newColors[0].ovdje.header;
+                        bodyColor = newColors[0].ovdje.body;
+                    }
+                    break;
+                    // Dodajte još uvjeta prema potrebi za ostale mogućnosti u opisu
+                }
+            default:
+                headerColor = "rgba(203,203,203,1)"; // Postavite vašu zadanu boju
+                bodyColor = "rgba(255,255,255,0.5)"; // Postavite vašu zadanu boju
+                break;
+        }
+        addStyleToTicket(ticket, headerColor, bodyColor);
+    })
+}
+
+
+//Tamplate for ticketCustomization
+function addStyleToTicket(ticket, headerColor, bodyColor) {
+    const headerRow = ticket.querySelector(".zero-progress-ticket.bg-blue-grey.white-text.text-center.ticket-row-header");
+
+    ticket.style.backgroundColor = bodyColor;
+    ticket.style.outline = "none";
+    ticket.style.borderRadius = "0 0 1rem 1rem";
+    ticket.style.borderColor = headerColor;
+    ticket.style.color = "Black";
+    ticket.style.boxShadow = `0px 0px 10px ${bodyColor}`;
+
+    if (headerRow) {
+        ticket.style.borderRadius = "1rem";
+        headerRow.style.setProperty("background-color", headerColor, "important");
+        headerRow.style.setProperty("border-radius", "0.5rem 0.5rem 0 0 ");
+        headerRow.style.setProperty("color", "white", "important");
+        const naslov = headerRow.querySelector("span.ticket-title");
+        naslov.style.setProperty("padding", "0");
+        naslov.style.setProperty("text-shadow", "none");
+        const h4 = naslov.parentElement;
+        h4.style.setProperty("background", "black");
+        h4.style.setProperty("text-align", "center");
+        h4.style.borderRadius = "0.75rem 0.75rem 0 0";
+        const headerCells = headerRow.querySelectorAll("td");
+        headerCells.forEach((cell) => {
+            cell.style.setProperty("font-weight", "600", "important");
+        });
+    }
 }
