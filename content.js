@@ -11,7 +11,9 @@ let sveBoje = [];
 let currentIndex = 0;
 
 
+
 settings = getStoredData("settings", settings)
+
 
 
 window.addEventListener("load", () => {
@@ -36,7 +38,7 @@ window.addEventListener("load", () => {
                 ) {
                     //Sve što zelimo napraviti na sa ticketima mora ići ovdje
 
-                    if (onOffCollors && boje !== "") {
+                    if (settings.onOffCollors && boje !== "") {
                         if (orderIdColorMap[ticketId]) {
                             color = orderIdColorMap[ticketId];
                         } else {
@@ -85,15 +87,6 @@ window.addEventListener("load", () => {
 
     });
     ///ZAVRSETAK TESTNOG DIJELA
-
-
-
-
-
-
-
-
-
 
 
 })
