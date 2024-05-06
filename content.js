@@ -9,6 +9,11 @@ const orderIdColorMap = {};
 let boje = "";
 let sveBoje = [];
 let currentIndex = 0;
+let newColors = [{
+    glovo: "FFC244",
+    ovdje: "",
+    van: "",
+}]
 
 
 
