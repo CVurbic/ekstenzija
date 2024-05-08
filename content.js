@@ -3,7 +3,7 @@ let settings = { onOffCollors: false, highlightArticle: 0 };
 const notificirajElementi = []
 let isGlowing = false;
 let blinkInterval = 500;
-const allTicketItems = [];
+let allTicketItems = [];
 let allArticles = [];
 const orderIdColorMap = {};
 let boje = "";
@@ -15,6 +15,7 @@ let newColors = [{
     van: { header: "rgba(255,77,77,1)", body: "rgba(255,77,77,0.5)" },
 }]
 
+let lastColor = undefined
 
 
 settings = getStoredData("settings", settings)
@@ -66,6 +67,7 @@ window.addEventListener("load", () => {
                     easyToMakeTicketsHighlighter()
                     importantArticle()
                     hideGlowElement()
+                    allTicketItems = []
                     processTicket(node)
                 }
             });
@@ -91,7 +93,7 @@ window.addEventListener("load", () => {
     if (settings.onOffCollors) addColorToTicket()
 
 
-
+allTicketItems = []
     tbodyElements.forEach((tbody) => {
         processTicket(tbody)
 
@@ -454,7 +456,7 @@ function addColorToTicket() {
         ticketCode = ticket.getAttribute("table-code")
 
         let headerColor, bodyColor;
-        console.log(ticketCode)
+        console.log(headerColor,bodyColor)
         switch (ticketCode) {
             case "GLOVO":
                 headerColor = newColors[0].glovo.header;
@@ -478,13 +480,18 @@ function addColorToTicket() {
                     if (descriptionText.includes("ZA VAN")) {
                         headerColor = newColors[0].van.header;
                         bodyColor = newColors[0].van.body;
+                        lastColor = [headerColor, bodyColor]
                     } else if (descriptionText.includes("ZA OVDJE")) {
                         headerColor = newColors[0].ovdje.header;
                         bodyColor = newColors[0].ovdje.body;
+                        lastColor = [headerColor, bodyColor]
                     }
-                    break;
                     // Dodajte još uvjeta prema potrebi za ostale mogućnosti u opisu
+                }else {
+                    headerColor = lastColor[0]
+                    bodyColor = lastColor[1]
                 }
+                break;
             default:
                 headerColor = "rgba(203,203,203,1)"; // Postavite vašu zadanu boju
                 bodyColor = "rgba(255,255,255,0.5)"; // Postavite vašu zadanu boju
